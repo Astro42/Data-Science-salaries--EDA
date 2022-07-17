@@ -1,0 +1,133 @@
+
+
+
+## Setting up the workspace
+
+```{r loading}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+ds_salaries<- read_csv("C:/Nidheesh documents/MPS NU/Study Materials/Q3/ALY 6060 Decision Support and Business Intelligence/module 5/ds_salaries.csv")
+```
+
+### Inspecting my dataset
+
+```{r}
+str(ds_salaries)
+
+colnames(ds_salaries)
+
+unique(ds_salaries$job_title)
+
+unique(ds_salaries$company_location)
+```
+
+I can already see two problems with my dataset: it includes jobs that are way outside of my wheelhouse and it includes data entries from all over the globe.
+
+## Filtering my data
+
+In order to filter this data down to information that is useful for my particular needs I'll need to remove all job titles that I am not qualified for and focus the data down to include only entries for companies that I would likely be applying to; namely, companies in the United States.
+
+```{r filtering_analyst_sal}
+analyst_sal <- filter(ds_salaries, job_title %in% c("Data Analyst", "Analytics Engineer","Data Engineer","ML Engineer","Applied Machine Learning Scientist"), company_location %in% c("US"))
+```
+
+```{r viewing_analyst_sal}
+str(analyst_sal)
+
+colnames(analyst_sal)
+
+unique(analyst_sal$job_title)
+
+unique(analyst_sal$company_location)
+```
+
+```{r visualizing_analyst_sal}
+salavg <- analyst_sal %>%
+  group_by(job_title) %>%
+  summarise_at(vars(salary_in_usd), list(avg_salary = mean))
+
+ggplot(salavg, aes(x=job_title, y=avg_salary, fill=job_title))+
+  geom_bar(stat="Identity")+
+  scale_y_continuous(labels = scales::comma)+
+  labs(fill = "Designation", x = "", y = "Average Salary", title = "Average salary provided in the US categorized by designation")
+```
+
+## Filtering data down to entry level positions
+
+Let's take a look at just entry level positions.
+
+```{r filter_entry_avg_sal}
+entry_avg_sal <- filter(analyst_sal, experience_level %in% c("EN"))
+
+entrysalavg <- entry_avg_sal %>% 
+  group_by(job_title) %>% 
+  summarise_at(vars(salary_in_usd), list(avg_salary = mean))
+
+ggplot(entrysalavg, aes(x=job_title, y=avg_salary, fill=job_title))+
+  geom_bar(stat="Identity")+
+  scale_y_continuous(labels = scales::comma)+
+  labs(fill = "Designation", x = "", y = "Average Salary", title= "Entry level salaries provided in the US for the interested roles")
+```
+
+
+
+## A preview of salary progression
+
+```{r}
+mid_avg_sal <- filter(analyst_sal, experience_level %in% c("MI"))
+
+midsalavg <- mid_avg_sal %>% 
+  group_by(job_title) %>% 
+  summarise_at(vars(salary_in_usd), list(avg_salary = mean))
+
+ggplot(midsalavg, aes(x=job_title, y=avg_salary, fill=job_title))+
+  geom_bar(stat="Identity")+
+  scale_y_continuous(labels = scales::comma)+
+  labs(fill = "Designation", x = "", y = "Average Salary", title="Mid level salaries provided in the US for the interested roles")
+```
+
+## Comparing entry level positions and mid level positions
+
+```{r}
+compare_avg_sal <- filter(analyst_sal, experience_level %in% c("EN", "MI"))
+
+## Create a new table to compare entry and mid level position salaries ##
+
+compsalavg <- compare_avg_sal %>% 
+  group_by(job_title, experience_level) %>% 
+  summarise_at(vars(salary_in_usd), list(avg_salary = mean))
+
+## Visualize the data ##
+
+ggplot(compsalavg, aes(x=job_title, y=avg_salary, fill=experience_level))+
+  geom_bar(stat="Identity", position="dodge")+
+  scale_y_continuous(labels = scales::comma)+
+  geom_text(aes(label = scales::comma(avg_salary)), position = position_dodge(0.9), vjust=1)+
+  labs(x = "", y = "Average Salary", labels= "Entry Level", "Mid Level", title="Salary differences categorized by Designation and Experience")+
+  scale_fill_discrete(name = "Experience Level", labels = c("Entry Level", "Mid Level"))
+```
+
+There's an obvious outlier here.  Let's check our data entries and see what's going on.
+
+```{r}
+ggplot(compare_avg_sal, aes(x=job_title, fill=experience_level))+
+  geom_bar(position="dodge")+
+  geom_text(stat='count', aes(label=..count..), position = position_dodge(0.9), vjust=1)+
+  labs(x = "", y = "Count", labels= "Entry Level", "Mid Level", title="Number of entries categorized by Designation and Experience in US")+
+  scale_fill_discrete(name = "Experience Level", labels = c("Entry Level", "Mid Level"))
+```
+
+## Final analysis
+
+```{r}
+da_reliable <- filter(compsalavg, job_title %in% c("Data Engineer", "Data Analyst"))
+
+
+ggplot(da_reliable, aes(x=job_title, y=avg_salary, fill=experience_level))+
+  geom_bar(stat="Identity", position="dodge")+
+  scale_y_continuous(labels = scales::comma)+
+  geom_text(aes(label = scales::comma(avg_salary)), position = position_dodge(0.9), vjust=1)+
+  labs(x = "", y = "Average Salary", labels= "Entry Level", "Mid Level", title="Comparison of subjectively acceptable salary data")+
+  scale_fill_discrete(name = "Experience Level", labels = c("Entry Level", "Mid Level"))
+```

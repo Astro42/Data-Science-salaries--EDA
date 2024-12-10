@@ -7,7 +7,7 @@
 library(tidyverse)
 library(dplyr)
 library(ggplot2)
-ds_salaries<- read_csv("C:/Nidheesh documents/MPS NU/Study Materials/Q3/ALY 6060 Decision Support and Business Intelligence/module 5/ds_salaries.csv")
+ds_salaries<- read_csv("/ds_salaries.csv")
 ```
 
 ### Inspecting my dataset
